@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Coin Bazar — Admin</title>
+  <link rel="stylesheet" href="./style.css"/>
+
+  <!-- Firebase v12 (CDN, Modular) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyDZkV0aOLY-Yiyh5s_Nq_GSz8aiIPoSohc",
+      authDomain: "coin-bazar-f3093.firebaseapp.com",
+      projectId: "coin-bazar-f3093",
+      storageBucket: "coin-bazar-f3093.firebasestorage.app",
+      messagingSenderId: "551875632672",
+      appId: "1:551875632672:web:55bdd11d4654bc4984a645",
+      measurementId: "G-776LFTSXTP"
+    };
+    const app = initializeApp(firebaseConfig);
+    try { getAnalytics(app); } catch(e) {}
+    window.__fbApp = app; // admin.js থেকে ব্যবহার করব
+  </script>
+</head>
+<body>
+  <!-- Login View -->
+  <section id="login-view" class="view active">
+    <div class="card narrow">
+      <h1>Admin Login</h1>
+      <p class="muted">শুধু অনুমোদিত এডমিন লগইন করতে পারবেন</p>
+      <label>Email</label>
+      <input id="login-email" type="email" placeholder="admin@email.com" value="tarekmahmud821@gmail.com"/>
+      <label>Password</label>
+      <input id="login-password" type="password" placeholder="••••••••" value="23431323"/>
+      <button id="login-btn">Login</button>
+      <p id="login-error" class="error"></p>
+    </div>
+  </section>
+
+  <!-- Admin View -->
+  <section id="admin-view" class="view">
+    <header class="topbar">
+      <div class="brand">Coin Bazar — Admin</div>
+      <div class="spacer"></div>
+      <div id="current-admin" class="muted"></div>
+      <button id="logout-btn" class="ghost">Logout</button>
+    </header>
+
+    <nav class="tabs">
+      <button data-tab="dashboard" class="tab active">Dashboard</button>
+      <button data-tab="users" class="tab">Users</button>
+      <button data-tab="withdrawals" class="tab">Withdrawals</button>
+      <button data-tab="tasks" class="tab">Tasks</button>
+      <button data-tab="settings" class="tab">Settings</button>
+    </nav>
+
+    <main class="content">
+      <!-- DASHBOARD -->
+      <section id="tab-dashboard" class="tabpage active">
+        <div class="grid">
+          <div class="kpi"><div class="kpi-title">Total Users</div><div id="kpi-users" class="kpi-value">—</div></div>
+          <div class="kpi"><div class="kpi-title">Pending Withdrawals</div><div id="kpi-pending" class="kpi-value">—</div></div>
+          <div class="kpi"><div class="kpi-title">Total Points (sum)</div><div id="kpi-points" class="kpi-value">—</div></div>
+          <div class="kpi"><div class="kpi-title">Total Ads Watched (sum)</div><div id="kpi-ads" class="kpi-value">—</div></div>
+        </div>
+      </section>
+
+      <!-- USERS -->
+      <section id="tab-users" class="tabpage">
+        <div class="toolbar">
+          <input id="user-search" type="text" placeholder="Search by username / telegramId / referralCode"/>
+          <button id="refresh-users" class="ghost">Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>UserName</th>
+                <th>TelegramID</th>
+                <th>Points</th>
+                <th>AdsWatched</th>
+                <th>RefCode</th>
+                <th>Withdraws</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- WITHDRAWALS -->
+      <section id="tab-withdrawals" class="tabpage">
+        <div class="toolbar">
+          <select id="w-filter">
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="all">All</option>
+          </select>
+          <button id="refresh-withdrawals" class="ghost">Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Method</th>
+                <th>Amount</th>
+                <th>Account</th>
+                <th>Status</th>
+                <th>Requested</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="withdrawals-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TASKS (optional: creates/edits tasks collection) -->
+      <section id="tab-tasks" class="tabpage">
+        <div class="card">
+          <h3>Add / Update Task</h3>
+          <div class="grid2">
+            <input id="task-title" placeholder="Title (e.g., Task 1)"/>
+            <input id="task-url" placeholder="Target URL"/>
+            <input id="task-reward" type="number" placeholder="Reward (points)" />
+            <input id="task-cooldown" type="number" placeholder="Cooldown (hours)" />
+            <label class="chk"><input id="task-active" type="checkbox" checked/> Active</label>
+          </div>
+          <button id="task-save">Save Task</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th><th>Reward</th><th>Cooldown(h)</th><th>Active</th><th>URL</th><th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="tasks-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="tab-settings" class="tabpage">
+        <div class="card narrow">
+          <h3>App Settings</h3>
+          <label>Min Withdraw (points)</label>
+          <input id="set-minWithdraw" type="number" placeholder="e.g., 10000"/>
+          <label>Ad Reward (points)</label>
+          <input id="set-adReward" type="number" placeholder="e.g., 5"/>
+          <label>Task Reward (default)</label>
+          <input id="set-taskReward" type="number" placeholder="e.g., 10"/>
+          <label>Referral Bonus (new user)</label>
+          <input id="set-ref-new" type="number" placeholder="e.g., 100"/>
+          <label>Referral Bonus (referrer)</label>
+          <input id="set-ref-ref" type="number" placeholder="e.g., 200"/>
+          <label>Max Ads per Cycle</label>
+          <input id="set-maxAds" type="number" placeholder="e.g., 10"/>
+          <label>Ad Cooldown (minutes)</label>
+          <input id="set-adCooldown" type="number" placeholder="e.g., 15"/>
+          <button id="settings-save">Save Settings</button>
+          <p id="settings-status" class="muted"></p>
+        </div>
+      </section>
+    </main>
+  </section>
+
+  <script type="module" src="./admin.js"></script>
+</body>
+</html>
