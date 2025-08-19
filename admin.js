@@ -21,6 +21,7 @@ const loginView = $("#login-view");
 const adminView = $("#admin-view");
 const tabs = $$(".tab");
 const pages = $$(".tabpage");
+
 tabs.forEach(btn=>{
   btn.addEventListener("click", ()=>{
     tabs.forEach(b=>b.classList.remove("active"));
@@ -30,32 +31,54 @@ tabs.forEach(btn=>{
   });
 });
 
-// ---------- Auth ----------
+// ---------- Auth & Auto Logout ----------
+let logoutTimer;
+const resetLogoutTimer = () => {
+  clearTimeout(logoutTimer);
+  logoutTimer = setTimeout(() => {
+    signOut(auth);
+    alert("Session expired due to inactivity. Please log in again.");
+  }, 15 * 60 * 1000); // 15 minutes
+};
+
+// Check auth state on page load
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    // If user is logged in, log them out immediately on page load
+    signOut(auth);
+  }
+});
+
+
 $("#login-btn").addEventListener("click", async ()=>{
   const email = $("#login-email").value.trim();
   const pwd   = $("#login-password").value.trim();
   $("#login-error").textContent = "";
   try {
-    await signInWithEmailAndPassword(auth, email, pwd);
+    const userCredential = await signInWithEmailAndPassword(auth, email, pwd);
+    const user = userCredential.user;
+    if (user) {
+      // Login successful, show admin view and start timer
+      $("#current-admin").textContent = user.email || user.uid;
+      loginView.classList.remove("active");
+      adminView.classList.add("active");
+      resetLogoutTimer();
+      await refreshAll();
+    }
   } catch (e) {
     $("#login-error").textContent = e.message || "Login failed";
   }
 });
-$("#logout-btn").addEventListener("click", ()=>signOut(auth));
 
-onAuthStateChanged(auth, async (user)=>{
-  if (!user) {
-    loginView.classList.add("active"); adminView.classList.remove("active");
-    return;
-  }
-  $("#current-admin").textContent = user.email || user.uid;
-  loginView.classList.remove("active"); adminView.classList.add("active");
-  await refreshAll();
+$("#logout-btn").addEventListener("click", async ()=>{
+  await signOut(auth);
+  loginView.classList.add("active");
+  adminView.classList.remove("active");
+  clearTimeout(logoutTimer);
 });
 
 // ---------- Dashboard ----------
 async function loadKPIs() {
-  // total users, total points sum, total ads sum
   const usersSnap = await getDocs(collection(db, "users"));
   let totalUsers = 0, sumPoints = 0, sumAds = 0;
   usersSnap.forEach(d=>{
@@ -68,7 +91,6 @@ async function loadKPIs() {
   $("#kpi-points").textContent = fmt(sumPoints);
   $("#kpi-ads").textContent    = fmt(sumAds);
 
-  // pending withdrawals
   const qs = await getDocs(query(collection(db,"withdrawals"), where("status","==","pending")));
   $("#kpi-pending").textContent = fmt(qs.size);
 }
@@ -77,17 +99,13 @@ async function loadKPIs() {
 async function loadUsers(filter="") {
   const tbody = $("#users-tbody"); tbody.innerHTML = "";
   const snap = await getDocs(collection(db, "users"));
-  const rows = [];
-  snap.forEach(d=>{
-    const u = d.data();
-    u._id = d.id;
-    rows.push(u);
-  });
+  const rows = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+
   const f = filter.toLowerCase();
-  const filtered = rows.filter(u=>{
-    return !f || (u.userName||"").toLowerCase().includes(f)
-      || (u.telegramId||"").toLowerCase().includes(f)
-      || (u.referralCode||"").toLowerCase().includes(f);
+  const filtered = rows.filter(u => {
+    return !f || (u.userName || "").toLowerCase().includes(f) ||
+      (u.telegramId || "").toLowerCase().includes(f) ||
+      (u.referralCode || "").toLowerCase().includes(f);
   });
 
   filtered.sort((a,b)=> (b.points||0)-(a.points||0));
@@ -95,35 +113,35 @@ async function loadUsers(filter="") {
   for (const u of filtered) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${u.userName||"—"}</td>
-      <td>${u.telegramId||"—"}</td>
-      <td>${fmt(u.points||0)}</td>
-      <td>${fmt(u.adsWatched||0)}</td>
-      <td>${u.referralCode||"—"}</td>
-      <td>${fmt(u.totalWithdrawalsCount||0)} / ${fmt(u.totalPointsWithdrawn||0)} pts</td>
+      <td>${u.userName || "—"}</td>
+      <td>${u.telegramId || "—"}</td>
+      <td>${fmt(u.points || 0)}</td>
+      <td>${fmt(u.adsWatched || 0)}</td>
+      <td>${u.referralCode || "—"}</td>
+      <td>${fmt(u.totalWithdrawalsCount || 0)} / ${fmt(u.totalPointsWithdrawn || 0)} pts</td>
       <td>
         <div class="row-actions">
-          <button data-act="add"   class="ghost">+ Points</button>
-          <button data-act="sub"   class="ghost">− Points</button>
+          <button data-act="add" class="ghost">+ Points</button>
+          <button data-act="sub" class="ghost">− Points</button>
           <button data-act="reset-ads" class="ghost">Reset Ads</button>
         </div>
       </td>`;
     tbody.appendChild(tr);
 
     const userRef = doc(db, "users", u._id);
-    tr.querySelector('[data-act="add"]').onclick = async ()=>{
-      const v = Number(prompt("Add how many points?", "10")||0);
+    tr.querySelector('[data-act="add"]').onclick = async () => {
+      const v = Number(prompt("Add how many points?", "10") || 0);
       if (!v) return;
       await updateDoc(userRef, { points: increment(v) });
       await refreshUsers();
     };
-    tr.querySelector('[data-act="sub"]').onclick = async ()=>{
-      const v = Number(prompt("Subtract how many points?", "10")||0);
+    tr.querySelector('[data-act="sub"]').onclick = async () => {
+      const v = Number(prompt("Subtract how many points?", "10") || 0);
       if (!v) return;
       await updateDoc(userRef, { points: increment(-v) });
       await refreshUsers();
     };
-    tr.querySelector('[data-act="reset-ads"]').onclick = async ()=>{
+    tr.querySelector('[data-act="reset-ads"]').onclick = async () => {
       await updateDoc(userRef, { adsWatched: 0, adsCooldownEnds: null });
       await refreshUsers();
     };
@@ -139,8 +157,7 @@ async function loadWithdrawals(filter="pending") {
   let qRef = collection(db, "withdrawals");
   if (filter !== "all") qRef = query(qRef, where("status","==", filter));
   const snap = await getDocs(qRef);
-  const rows = [];
-  snap.forEach(d=>rows.push({id:d.id, ...d.data()}));
+  const rows = snap.docs.map(d => ({id:d.id, ...d.data()}));
   rows.sort((a,b)=> (b.requestDate?.seconds||0)-(a.requestDate?.seconds||0));
 
   for (const w of rows) {
@@ -170,7 +187,6 @@ async function loadWithdrawals(filter="pending") {
 
     if (approve) approve.onclick = async ()=>{
       await updateDoc(ref, { status:"approved" });
-      // (তোমার main app already points deduct করে — তাই এখানে আর কমাবো না)
       await refreshWithdrawals();
     };
     if (reject) reject.onclick = async ()=>{
@@ -190,19 +206,20 @@ $("#w-filter").addEventListener("change", (e)=>loadWithdrawals(e.target.value));
 $("#refresh-withdrawals").addEventListener("click", ()=>refreshWithdrawals());
 async function refreshWithdrawals(){ await loadWithdrawals($("#w-filter").value); }
 
-// ---------- Tasks (optional, `tasks` collection) ----------
+// ---------- Tasks ----------
 async function loadTasks() {
   const tb = $("#tasks-tbody"); tb.innerHTML = "";
   const snap = await getDocs(collection(db,"tasks"));
-  const list = []; snap.forEach(d=>list.push({id:d.id, ...d.data()}));
+  const list = snap.docs.map(d => ({id:d.id, ...d.data()}));
+  
   list.forEach(t=>{
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${t.title||"—"}</td>
-      <td>${fmt(t.reward||0)}</td>
-      <td>${fmt(t.cooldownHours||0)}</td>
-      <td>${t.active? "Yes":"No"}</td>
-      <td style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.url||"—"}</td>
+      <td>${t.title || "—"}</td>
+      <td>${fmt(t.reward || 0)}</td>
+      <td>${fmt(t.cooldownHours || 0)}</td>
+      <td>${t.active ? "Yes" : "No"}</td>
+      <td style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.url || "—"}</td>
       <td>
         <div class="row-actions">
           <button class="ghost" data-act="edit">Edit</button>
@@ -212,12 +229,12 @@ async function loadTasks() {
     tb.appendChild(tr);
 
     tr.querySelector('[data-act="edit"]').onclick = ()=>{
-      $("#task-title").value = t.title||"";
-      $("#task-url").value = t.url||"";
-      $("#task-reward").value = t.reward||0;
-      $("#task-cooldown").value = t.cooldownHours||0;
+      $("#task-title").value = t.title || "";
+      $("#task-url").value = t.url || "";
+      $("#task-reward").value = t.reward || 0;
+      $("#task-cooldown").value = t.cooldownHours || 0;
       $("#task-active").checked = !!t.active;
-      $("#task-save").dataset.id = t.id; // set edit mode
+      $("#task-save").dataset.id = t.id;
     };
     tr.querySelector('[data-act="del"]').onclick = async ()=>{
       if (confirm("Delete task?")) { await deleteDoc(doc(db,"tasks", t.id)); await loadTasks(); }
@@ -228,8 +245,8 @@ $("#task-save").addEventListener("click", async ()=>{
   const payload = {
     title: $("#task-title").value.trim(),
     url: $("#task-url").value.trim(),
-    reward: Number($("#task-reward").value||0),
-    cooldownHours: Number($("#task-cooldown").value||0),
+    reward: Number($("#task-reward").value || 0),
+    cooldownHours: Number($("#task-cooldown").value || 0),
     active: $("#task-active").checked,
     updatedAt: serverTimestamp()
   };
@@ -246,7 +263,7 @@ $("#task-save").addEventListener("click", async ()=>{
   await loadTasks();
 });
 
-// ---------- Settings (`adminSettings/appConfig`) ----------
+// ---------- Settings ----------
 async function loadSettings() {
   const ref = doc(db,"adminSettings","appConfig");
   const snap = await getDoc(ref);

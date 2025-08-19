@@ -6,7 +6,6 @@
   <title>Coin Bazar — Admin</title>
   <link rel="stylesheet" href="./style.css"/>
 
-  <!-- Firebase v12 (CDN, Modular) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-analytics.js";
@@ -21,43 +20,41 @@
     };
     const app = initializeApp(firebaseConfig);
     try { getAnalytics(app); } catch(e) {}
-    window.__fbApp = app; // admin.js থেকে ব্যবহার করব
+    window.__fbApp = app;
   </script>
 </head>
 <body>
-  <!-- Login View -->
   <section id="login-view" class="view active">
     <div class="card narrow">
       <h1>Admin Login</h1>
       <p class="muted">শুধু অনুমোদিত এডমিন লগইন করতে পারবেন</p>
       <label>Email</label>
-      <input id="login-email" type="email" placeholder="admin@email.com" value="tarekmahmud821@gmail.com"/>
+      <input id="login-email" type="email" placeholder="admin@email.com"/>
       <label>Password</label>
-      <input id="login-password" type="password" placeholder="••••••••" value="23431323"/>
+      <input id="login-password" type="password" placeholder="••••••••"/>
       <button id="login-btn">Login</button>
       <p id="login-error" class="error"></p>
     </div>
   </section>
 
-  <!-- Admin View -->
   <section id="admin-view" class="view">
     <header class="topbar">
       <div class="brand">Coin Bazar — Admin</div>
       <div class="spacer"></div>
       <div id="current-admin" class="muted"></div>
-      <button id="logout-btn" class="ghost">Logout</button>
     </header>
 
-    <nav class="tabs">
-      <button data-tab="dashboard" class="tab active">Dashboard</button>
-      <button data-tab="users" class="tab">Users</button>
-      <button data-tab="withdrawals" class="tab">Withdrawals</button>
-      <button data-tab="tasks" class="tab">Tasks</button>
-      <button data-tab="settings" class="tab">Settings</button>
+    <nav class="tabs-container">
+      <ul class="tabs">
+        <li data-tab="dashboard" class="tab active">Dashboard</li>
+        <li data-tab="users" class="tab">Users</li>
+        <li data-tab="withdrawals" class="tab">Withdrawals</li>
+        <li data-tab="tasks" class="tab">Tasks</li>
+        <li data-tab="settings" class="tab">Settings</li>
+      </ul>
     </nav>
 
     <main class="content">
-      <!-- DASHBOARD -->
       <section id="tab-dashboard" class="tabpage active">
         <div class="grid">
           <div class="kpi"><div class="kpi-title">Total Users</div><div id="kpi-users" class="kpi-value">—</div></div>
@@ -67,7 +64,6 @@
         </div>
       </section>
 
-      <!-- USERS -->
       <section id="tab-users" class="tabpage">
         <div class="toolbar">
           <input id="user-search" type="text" placeholder="Search by username / telegramId / referralCode"/>
@@ -91,7 +87,6 @@
         </div>
       </section>
 
-      <!-- WITHDRAWALS -->
       <section id="tab-withdrawals" class="tabpage">
         <div class="toolbar">
           <select id="w-filter">
@@ -120,7 +115,6 @@
         </div>
       </section>
 
-      <!-- TASKS (optional: creates/edits tasks collection) -->
       <section id="tab-tasks" class="tabpage">
         <div class="card">
           <h3>Add / Update Task</h3>
@@ -145,7 +139,6 @@
         </div>
       </section>
 
-      <!-- SETTINGS -->
       <section id="tab-settings" class="tabpage">
         <div class="card narrow">
           <h3>App Settings</h3>
@@ -166,10 +159,14 @@
           <button id="settings-save">Save Settings</button>
           <p id="settings-status" class="muted"></p>
         </div>
+        <div class="card narrow" style="margin-top: 20px;">
+          <h3>Logout</h3>
+          <p class="muted">লগআউট করতে নিচের বাটনে ক্লিক করুন।</p>
+          <button id="logout-btn">Logout</button>
+        </div>
       </section>
     </main>
   </section>
-
   <script type="module" src="./admin.js"></script>
 </body>
 </html>
