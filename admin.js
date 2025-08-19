@@ -41,30 +41,30 @@ const resetLogoutTimer = () => {
   }, 15 * 60 * 1000); // 15 minutes
 };
 
-// Check auth state on page load
-onAuthStateChanged(auth, (user) => {
+// Listen for auth state changes
+onAuthStateChanged(auth, async (user) => {
   if (user) {
-    // If user is logged in, log them out immediately on page load
-    signOut(auth);
+    // User is signed in, show admin view and load data
+    $("#current-admin").textContent = user.email || user.uid;
+    loginView.classList.remove("active");
+    adminView.classList.add("active");
+    resetLogoutTimer(); // Start inactivity timer
+    await refreshAll();
+  } else {
+    // User is signed out, show login view
+    loginView.classList.add("active");
+    adminView.classList.remove("active");
+    clearTimeout(logoutTimer); // Clear any existing timer
   }
 });
-
 
 $("#login-btn").addEventListener("click", async ()=>{
   const email = $("#login-email").value.trim();
   const pwd   = $("#login-password").value.trim();
   $("#login-error").textContent = "";
   try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, pwd);
-    const user = userCredential.user;
-    if (user) {
-      // Login successful, show admin view and start timer
-      $("#current-admin").textContent = user.email || user.uid;
-      loginView.classList.remove("active");
-      adminView.classList.add("active");
-      resetLogoutTimer();
-      await refreshAll();
-    }
+    await signInWithEmailAndPassword(auth, email, pwd);
+    // onAuthStateChanged will handle the rest
   } catch (e) {
     $("#login-error").textContent = e.message || "Login failed";
   }
@@ -72,10 +72,14 @@ $("#login-btn").addEventListener("click", async ()=>{
 
 $("#logout-btn").addEventListener("click", async ()=>{
   await signOut(auth);
-  loginView.classList.add("active");
-  adminView.classList.remove("active");
-  clearTimeout(logoutTimer);
+  // onAuthStateChanged will handle the view change
 });
+
+// Add listeners for inactivity
+document.addEventListener("mousemove", resetLogoutTimer);
+document.addEventListener("keydown", resetLogoutTimer);
+document.addEventListener("scroll", resetLogoutTimer);
+document.addEventListener("click", resetLogoutTimer);
 
 // ---------- Dashboard ----------
 async function loadKPIs() {
