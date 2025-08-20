@@ -40,24 +40,22 @@
   <section id="admin-view" class="view">
     <header class="topbar">
       <div class="brand">Coin Bazar — Admin</div>
-      <nav class="tabs-container">
-        <ul class="tabs">
-          <li data-tab="dashboard" class="tab active">Dashboard</li>
-          <li data-tab="users" class="tab">Users</li>
-          <li data-tab="withdrawals" class="tab">Withdrawals</li>
-          <li data-tab="tasks" class="tab">Tasks</li>
-          <li data-tab="settings" class="tab">Settings</li>
-        </ul>
-      </nav>
-      <div class="topbar-right">
-        <div id="current-admin" class="muted"></div>
-        <button id="logout-btn" class="ghost">Logout</button>
-      </div>
+      <div class="spacer"></div>
+      <div id="current-admin" class="muted"></div>
     </header>
+
+    <nav class="tabs-container">
+      <ul class="tabs">
+        <li data-tab="dashboard" class="tab active">Dashboard</li>
+        <li data-tab="users" class="tab">Users</li>
+        <li data-tab="withdrawals" class="tab">Withdrawals</li>
+        <li data-tab="tasks" class="tab">Tasks</li>
+        <li data-tab="settings" class="tab">Settings</li>
+      </ul>
+    </nav>
 
     <main class="content">
       <section id="tab-dashboard" class="tabpage active">
-        <h2>Dashboard</h2>
         <div class="grid">
           <div class="kpi"><div class="kpi-title">Total Users</div><div id="kpi-users" class="kpi-value">—</div></div>
           <div class="kpi"><div class="kpi-title">Pending Withdrawals</div><div id="kpi-pending" class="kpi-value">—</div></div>
@@ -67,14 +65,8 @@
       </section>
 
       <section id="tab-users" class="tabpage">
-        <h2>Users</h2>
         <div class="toolbar">
           <input id="user-search" type="text" placeholder="Search by username / telegramId / referralCode"/>
-          <select id="user-ads-filter">
-            <option value="all">All Ads</option>
-            <option value="today">Today's Ads</option>
-            <option value="last30days">Last 30 Days' Ads</option>
-          </select>
           <button id="refresh-users" class="ghost">Refresh</button>
         </div>
         <div class="table-wrap">
@@ -96,7 +88,6 @@
       </section>
 
       <section id="tab-withdrawals" class="tabpage">
-        <h2>Withdrawals</h2>
         <div class="toolbar">
           <select id="w-filter">
             <option value="pending">Pending</option>
@@ -125,7 +116,6 @@
       </section>
 
       <section id="tab-tasks" class="tabpage">
-        <h2>Tasks</h2>
         <div class="card">
           <h3>Add / Update Task</h3>
           <div class="grid2">
@@ -150,7 +140,6 @@
       </section>
 
       <section id="tab-settings" class="tabpage">
-        <h2>Settings</h2>
         <div class="card narrow">
           <h3>App Settings</h3>
           <label>Min Withdraw (points)</label>
