@@ -3,7 +3,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 import {
   getFirestore, collection, getDocs, getDoc, doc, query, where,
-  orderBy, limit, updateDoc, setDoc, addDoc, serverTimestamp, increment, deleteDoc
+  orderBy, updateDoc, setDoc, addDoc, serverTimestamp, increment, deleteDoc
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 const app = window.__fbApp;
@@ -38,23 +38,20 @@ const resetLogoutTimer = () => {
   logoutTimer = setTimeout(() => {
     signOut(auth);
     alert("Session expired due to inactivity. Please log in again.");
-  }, 15 * 60 * 1000); // 15 minutes
+  }, 15 * 60 * 1000);
 };
 
-// Listen for auth state changes
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    // User is signed in, show admin view and load data
     $("#current-admin").textContent = user.email || user.uid;
     loginView.classList.remove("active");
     adminView.classList.add("active");
-    resetLogoutTimer(); // Start inactivity timer
+    resetLogoutTimer();
     await refreshAll();
   } else {
-    // User is signed out, show login view
     loginView.classList.add("active");
     adminView.classList.remove("active");
-    clearTimeout(logoutTimer); // Clear any existing timer
+    clearTimeout(logoutTimer);
   }
 });
 
@@ -64,7 +61,6 @@ $("#login-btn").addEventListener("click", async ()=>{
   $("#login-error").textContent = "";
   try {
     await signInWithEmailAndPassword(auth, email, pwd);
-    // onAuthStateChanged will handle the rest
   } catch (e) {
     $("#login-error").textContent = e.message || "Login failed";
   }
@@ -72,10 +68,8 @@ $("#login-btn").addEventListener("click", async ()=>{
 
 $("#logout-btn").addEventListener("click", async ()=>{
   await signOut(auth);
-  // onAuthStateChanged will handle the view change
 });
 
-// Add listeners for inactivity
 document.addEventListener("mousemove", resetLogoutTimer);
 document.addEventListener("keydown", resetLogoutTimer);
 document.addEventListener("scroll", resetLogoutTimer);
@@ -100,7 +94,7 @@ async function loadKPIs() {
 }
 
 // ---------- Users ----------
-async function loadUsers(filter="") {
+async function loadUsers(filter="", adsFilter="all") {
   const tbody = $("#users-tbody"); tbody.innerHTML = "";
   const snap = await getDocs(collection(db, "users"));
   const rows = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
@@ -115,18 +109,33 @@ async function loadUsers(filter="") {
   filtered.sort((a,b)=> (b.points||0)-(a.points||0));
 
   for (const u of filtered) {
+    let adsCount = u.adsWatched || 0;
+    if (adsFilter === "today") {
+      const today = new Date().toDateString();
+      adsCount = u.adsWatchedByDate?.[today] || 0;
+    } else if (adsFilter === "last30days") {
+      adsCount = 0;
+      const now = new Date();
+      for (let i = 0; i < 30; i++) {
+        const date = new Date(now);
+        date.setDate(now.getDate() - i);
+        const dateKey = date.toDateString();
+        adsCount += u.adsWatchedByDate?.[dateKey] || 0;
+      }
+    }
+
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${u.userName || "—"}</td>
       <td>${u.telegramId || "—"}</td>
       <td>${fmt(u.points || 0)}</td>
-      <td>${fmt(u.adsWatched || 0)}</td>
+      <td>${fmt(adsCount)}</td>
       <td>${u.referralCode || "—"}</td>
-      <td>${fmt(u.totalWithdrawalsCount || 0)} / ${fmt(u.totalPointsWithdrawn || 0)} pts</td>
+      <td>${fmt(u.totalWithdrawalsCount || 0)}/${fmt(u.totalPointsWithdrawn || 0)} pts</td>
       <td>
         <div class="row-actions">
-          <button data-act="add" class="ghost">+ Points</button>
-          <button data-act="sub" class="ghost">− Points</button>
+          <button data-act="add" class="ghost">+ Pts</button>
+          <button data-act="sub" class="ghost">− Pts</button>
           <button data-act="reset-ads" class="ghost">Reset Ads</button>
         </div>
       </td>`;
@@ -146,14 +155,21 @@ async function loadUsers(filter="") {
       await refreshUsers();
     };
     tr.querySelector('[data-act="reset-ads"]').onclick = async () => {
-      await updateDoc(userRef, { adsWatched: 0, adsCooldownEnds: null });
+      await updateDoc(userRef, { adsWatched: 0, adsCooldownEnds: null, adsWatchedByDate: {} });
       await refreshUsers();
     };
   }
 }
+
+$("#user-search").addEventListener("input", ()=>refreshUsers());
+$("#user-ads-filter").addEventListener("change", ()=>refreshUsers());
 $("#refresh-users").addEventListener("click", ()=>refreshUsers());
-$("#user-search").addEventListener("input", (e)=>loadUsers(e.target.value));
-async function refreshUsers(){ await loadUsers($("#user-search").value.trim()); }
+
+async function refreshUsers(){
+  const filter = $("#user-search").value.trim();
+  const adsFilter = $("#user-ads-filter").value;
+  await loadUsers(filter, adsFilter);
+}
 
 // ---------- Withdrawals ----------
 async function loadWithdrawals(filter="pending") {
@@ -206,6 +222,7 @@ async function loadWithdrawals(filter="pending") {
     };
   }
 }
+
 $("#w-filter").addEventListener("change", (e)=>loadWithdrawals(e.target.value));
 $("#refresh-withdrawals").addEventListener("click", ()=>refreshWithdrawals());
 async function refreshWithdrawals(){ await loadWithdrawals($("#w-filter").value); }
@@ -300,3 +317,4 @@ $("#settings-save").addEventListener("click", async ()=>{
 async function refreshAll() {
   await Promise.all([loadKPIs(), refreshUsers(), refreshWithdrawals(), loadTasks(), loadSettings()]);
 }
+
