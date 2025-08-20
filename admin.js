@@ -84,19 +84,35 @@ document.addEventListener("click", resetLogoutTimer);
 // ---------- Dashboard ----------
 async function loadKPIs() {
   const usersSnap = await getDocs(collection(db, "users"));
-  let totalUsers = 0, sumPoints = 0, sumAds = 0;
+  let totalUsers = 0, sumPoints = 0, sumAds = 0, sumDailyAds = 0;
   usersSnap.forEach(d=>{
     totalUsers++;
     const v = d.data();
     sumPoints += Number(v.points||0);
     sumAds += Number(v.adsWatched||0);
+    sumDailyAds += Number(v.dailyAdsWatched||0);
   });
   $("#kpi-users").textContent  = fmt(totalUsers);
   $("#kpi-points").textContent = fmt(sumPoints);
   $("#kpi-ads").textContent    = fmt(sumAds);
+  $("#kpi-daily-ads").textContent = fmt(sumDailyAds);
 
   const qs = await getDocs(query(collection(db,"withdrawals"), where("status","==","pending")));
   $("#kpi-pending").textContent = fmt(qs.size);
+  
+  const now = new Date();
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(now.getDate() - 30);
+  
+  const allWithdrawalsSnap = await getDocs(collection(db, "withdrawals"));
+  let totalWithdrawalsAmount = 0;
+  allWithdrawalsSnap.forEach(d => {
+    const v = d.data();
+    if (v.requestDate && v.requestDate.toDate() >= thirtyDaysAgo) {
+      totalWithdrawalsAmount += Number(v.amount || 0);
+    }
+  });
+  $("#kpi-30-days-withdrawals").textContent = fmt(totalWithdrawalsAmount);
 }
 
 // ---------- Users ----------
@@ -121,13 +137,15 @@ async function loadUsers(filter="") {
       <td>${u.telegramId || "—"}</td>
       <td>${fmt(u.points || 0)}</td>
       <td>${fmt(u.adsWatched || 0)}</td>
+      <td>${fmt(u.dailyAdsWatched || 0)}</td>
       <td>${u.referralCode || "—"}</td>
       <td>${fmt(u.totalWithdrawalsCount || 0)} / ${fmt(u.totalPointsWithdrawn || 0)} pts</td>
       <td>
         <div class="row-actions">
           <button data-act="add" class="ghost">+ Points</button>
           <button data-act="sub" class="ghost">− Points</button>
-          <button data-act="reset-ads" class="ghost">Reset Ads</button>
+          <button data-act="reset-ads" class="ghost">Reset All Ads</button>
+          <button data-act="reset-daily-ads" class="ghost">Reset Daily Ads</button>
         </div>
       </td>`;
     tbody.appendChild(tr);
@@ -147,6 +165,10 @@ async function loadUsers(filter="") {
     };
     tr.querySelector('[data-act="reset-ads"]').onclick = async () => {
       await updateDoc(userRef, { adsWatched: 0, adsCooldownEnds: null });
+      await refreshUsers();
+    };
+    tr.querySelector('[data-act="reset-daily-ads"]').onclick = async () => {
+      await updateDoc(userRef, { dailyAdsWatched: 0 });
       await refreshUsers();
     };
   }
@@ -300,3 +322,35 @@ $("#settings-save").addEventListener("click", async ()=>{
 async function refreshAll() {
   await Promise.all([loadKPIs(), refreshUsers(), refreshWithdrawals(), loadTasks(), loadSettings()]);
 }
+
+// Automatic daily ad reset function
+async function resetDailyAds() {
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const usersSnap = await getDocs(collection(db, "users"));
+  const batch = db.batch();
+
+  usersSnap.forEach(userDoc => {
+    const userData = userDoc.data();
+    const lastResetDate = userData.lastAdResetDate?.toDate();
+    
+    if (!lastResetDate || lastResetDate.getTime() < todayStart.getTime()) {
+      const userRef = userDoc.ref;
+      batch.update(userRef, {
+        dailyAdsWatched: 0,
+        lastAdResetDate: todayStart
+      });
+      console.log(`Resetting daily ads for user: ${userDoc.id}`);
+    }
+  });
+
+  await batch.commit();
+  console.log("Daily ad reset batch committed.");
+}
+
+// This function will run the daily ad reset logic.
+// For a production environment, this task is best handled by a scheduled Firebase Cloud Function.
+// However, for a simple client-side solution, this will perform the reset when the admin panel loads.
+resetDailyAds();
+
