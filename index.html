@@ -39,50 +39,92 @@
 
   <section id="admin-view" class="view">
     <header class="topbar">
-      <div class="brand">Coin Bazar — Admin</div>
+      <div class="menu-icon" id="menu-btn">&#9776;</div>
+      <div class="brand">Welcome, Admin!</div>
       <div class="spacer"></div>
       <div id="current-admin" class="muted"></div>
     </header>
 
-    <nav class="tabs-container">
-      <ul class="tabs">
-        <li data-tab="dashboard" class="tab active">Dashboard</li>
-        <li data-tab="users" class="tab">Users</li>
-        <li data-tab="withdrawals" class="tab">Withdrawals</li>
-        <li data-tab="tasks" class="tab">Tasks</li>
-        <li data-tab="settings" class="tab">Settings</li>
+    <nav id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">Admin Panel</div>
+        <div class="close-btn" id="close-btn">&times;</div>
+      </div>
+      <ul class="sidebar-menu">
+        <li data-tab="dashboard" class="menu-item active">Dashboard</li>
+        <li data-tab="users" class="menu-item">Users</li>
+        <li data-tab="withdrawals" class="menu-item">Withdrawals</li>
+        <li data-tab="tasks" class="menu-item">Tasks</li>
+        <li data-tab="settings" class="menu-item">Settings</li>
       </ul>
     </nav>
+    <div id="overlay" class="overlay"></div>
 
     <main class="content">
       <section id="tab-dashboard" class="tabpage active">
-        <div class="grid">
-          <div class="kpi"><div class="kpi-title">Total Users</div><div id="kpi-users" class="kpi-value">—</div></div>
-          <div class="kpi"><div class="kpi-title">Pending Withdrawals</div><div id="kpi-pending" class="kpi-value">—</div></div>
-          <div class="kpi"><div class="kpi-title">Total Points (sum)</div><div id="kpi-points" class="kpi-value">—</div></div>
-          <div class="kpi"><div class="kpi-title">Total Ads Watched (sum)</div><div id="kpi-ads" class="kpi-value">—</div></div>
-          <div class="kpi"><div class="kpi-title">Daily Ads Watched (sum)</div><div id="kpi-daily-ads" class="kpi-value">—</div></div>
-          <div class="kpi"><div class="kpi-title">30 Days Withdrawals</div><div id="kpi-30-days-withdrawals" class="kpi-value">—</div></div>
+        <div class="dashboard-grid">
+          <div class="dashboard-item blue">
+            <div class="icon">
+              <img src="https://img.icons8.com/ios-filled/50/ffffff/user-group-man-man.png" alt="Users Icon"/>
+            </div>
+            <div class="title">Total Users</div>
+            <div id="kpi-users" class="value">—</div>
+          </div>
+          <div class="dashboard-item green">
+            <div class="icon">
+              <img src="https://img.icons8.com/ios-filled/50/ffffff/money-bag.png" alt="Withdrawals Icon"/>
+            </div>
+            <div class="title">Pending Withdrawals</div>
+            <div id="kpi-pending" class="value">—</div>
+          </div>
+          <div class="dashboard-item yellow">
+            <div class="icon">
+              <img src="https://img.icons8.com/ios-filled/50/ffffff/bar-chart.png" alt="Points Icon"/>
+            </div>
+            <div class="title">Total Points (sum)</div>
+            <div id="kpi-points" class="value">—</div>
+          </div>
+          <div class="dashboard-item teal">
+            <div class="icon">
+              <img src="https://img.icons8.com/ios-filled/50/ffffff/visible.png" alt="Ads Watched Icon"/>
+            </div>
+            <div class="title">Total Ads Watched (sum)</div>
+            <div id="kpi-ads" class="value">—</div>
+          </div>
+          <div class="dashboard-item orange">
+            <div class="icon">
+              <img src="https://img.icons8.com/ios-filled/50/ffffff/calendar.png" alt="Daily Ads Icon"/>
+            </div>
+            <div class="title">Daily Ads Watched (sum)</div>
+            <div id="kpi-daily-ads" class="value">—</div>
+          </div>
+          <div class="dashboard-item purple">
+            <div class="icon">
+              <img src="https://img.icons8.com/ios-filled/50/ffffff/down-squared.png" alt="Withdrawals Icon"/>
+            </div>
+            <div class="title">30 Days Withdrawals</div>
+            <div id="kpi-30-days-withdrawals" class="value">—</div>
+          </div>
         </div>
       </section>
 
       <section id="tab-users" class="tabpage">
         <div class="toolbar">
-          <input id="user-search" type="text" placeholder="Search by username / telegramId / referralCode"/>
-          <button id="refresh-users" class="ghost">Refresh</button>
+          <input id="user-search" type="text" placeholder="ব্যবহারকারীর নাম / টেলিগ্রাম আইডি / রেফারেল কোড দিয়ে খুঁজুন"/>
+          <button id="refresh-users" class="ghost">রিফ্রেশ</button>
         </div>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>UserName</th>
-                <th>TelegramID</th>
-                <th>Points</th>
-                <th>AdsWatched</th>
-                <th>Daily Ads</th>
-                <th>RefCode</th>
-                <th>Withdraws</th>
-                <th>Actions</th>
+                <th>ব্যবহারকারীর নাম</th>
+                <th>টেলিগ্রাম আইডি</th>
+                <th>পয়েন্ট</th>
+                <th>বিজ্ঞাপন দেখা</th>
+                <th>দৈনিক বিজ্ঞাপন</th>
+                <th>রেফারেল কোড</th>
+                <th>উইথড্র</th>
+                <th>কার্যক্রম</th>
               </tr>
             </thead>
             <tbody id="users-tbody"></tbody>
@@ -93,24 +135,24 @@
       <section id="tab-withdrawals" class="tabpage">
         <div class="toolbar">
           <select id="w-filter">
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-            <option value="all">All</option>
+            <option value="pending">পেন্ডিং</option>
+            <option value="approved">অনুমোদিত</option>
+            <option value="rejected">বাতিল</option>
+            <option value="all">সব</option>
           </select>
-          <button id="refresh-withdrawals" class="ghost">Refresh</button>
+          <button id="refresh-withdrawals" class="ghost">রিফ্রেশ</button>
         </div>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>User</th>
-                <th>Method</th>
-                <th>Amount</th>
-                <th>Account</th>
-                <th>Status</th>
-                <th>Requested</th>
-                <th>Action</th>
+                <th>ব্যবহারকারী</th>
+                <th>পদ্ধতি</th>
+                <th>পরিমাণ</th>
+                <th>একাউন্ট</th>
+                <th>স্থিতি</th>
+                <th>অনুরোধের সময়</th>
+                <th>কার্যক্রম</th>
               </tr>
             </thead>
             <tbody id="withdrawals-tbody"></tbody>
@@ -120,21 +162,21 @@
 
       <section id="tab-tasks" class="tabpage">
         <div class="card">
-          <h3>Add / Update Task</h3>
+          <h3>টাস্ক যোগ / আপডেট করুন</h3>
           <div class="grid2">
-            <input id="task-title" placeholder="Title (e.g., Task 1)"/>
-            <input id="task-url" placeholder="Target URL"/>
-            <input id="task-reward" type="number" placeholder="Reward (points)" />
-            <input id="task-cooldown" type="number" placeholder="Cooldown (hours)" />
-            <label class="chk"><input id="task-active" type="checkbox" checked/> Active</label>
+            <input id="task-title" placeholder="শিরোনাম (যেমন: টাস্ক ১)"/>
+            <input id="task-url" placeholder="টার্গেট URL"/>
+            <input id="task-reward" type="number" placeholder="পুরস্কার (পয়েন্ট)" />
+            <input id="task-cooldown" type="number" placeholder="কোলডাউন (ঘণ্টা)" />
+            <label class="chk"><input id="task-active" type="checkbox" checked/> সক্রিয়</label>
           </div>
-          <button id="task-save">Save Task</button>
+          <button id="task-save">সেভ টাস্ক</button>
         </div>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Title</th><th>Reward</th><th>Cooldown(h)</th><th>Active</th><th>URL</th><th>Action</th>
+                <th>শিরোনাম</th><th>পুরস্কার</th><th>কোলডাউন(ঘ)</th><th>সক্রিয়</th><th>URL</th><th>কার্যক্রম</th>
               </tr>
             </thead>
             <tbody id="tasks-tbody"></tbody>
@@ -144,22 +186,22 @@
 
       <section id="tab-settings" class="tabpage">
         <div class="card narrow">
-          <h3>App Settings</h3>
-          <label>Min Withdraw (points)</label>
-          <input id="set-minWithdraw" type="number" placeholder="e.g., 10000"/>
-          <label>Ad Reward (points)</label>
-          <input id="set-adReward" type="number" placeholder="e.g., 5"/>
-          <label>Task Reward (default)</label>
-          <input id="set-taskReward" type="number" placeholder="e.g., 10"/>
-          <label>Referral Bonus (new user)</label>
-          <input id="set-ref-new" type="number" placeholder="e.g., 100"/>
-          <label>Referral Bonus (referrer)</label>
-          <input id="set-ref-ref" type="number" placeholder="e.g., 200"/>
-          <label>Max Ads per Cycle</label>
-          <input id="set-maxAds" type="number" placeholder="e.g., 10"/>
-          <label>Ad Cooldown (minutes)</label>
-          <input id="set-adCooldown" type="number" placeholder="e.g., 15"/>
-          <button id="settings-save">Save Settings</button>
+          <h3>অ্যাপ সেটিংস</h3>
+          <label>সর্বনিম্ন উইথড্র (পয়েন্ট)</label>
+          <input id="set-minWithdraw" type="number" placeholder="যেমন: 10000"/>
+          <label>বিজ্ঞাপন পুরস্কার (পয়েন্ট)</label>
+          <input id="set-adReward" type="number" placeholder="যেমন: 5"/>
+          <label>টাস্ক পুরস্কার (ডিফল্ট)</label>
+          <input id="set-taskReward" type="number" placeholder="যেমন: 10"/>
+          <label>রেফারেল বোনাস (নতুন ব্যবহারকারী)</label>
+          <input id="set-ref-new" type="number" placeholder="যেমন: 100"/>
+          <label>রেফারেল বোনাস (রেফারকারী)</label>
+          <input id="set-ref-ref" type="number" placeholder="যেমন: 200"/>
+          <label>প্রতি সাইকেলে সর্বোচ্চ বিজ্ঞাপন</label>
+          <input id="set-maxAds" type="number" placeholder="যেমন: 10"/>
+          <label>বিজ্ঞাপন কোলডাউন (মিনিট)</label>
+          <input id="set-adCooldown" type="number" placeholder="যেমন: 15"/>
+          <button id="settings-save">সেভ সেটিংস</button>
           <p id="settings-status" class="muted"></p>
         </div>
         <div class="card narrow" style="margin-top: 20px;">
@@ -171,5 +213,31 @@
     </main>
   </section>
   <script type="module" src="./admin.js"></script>
+  <script>
+    document.getElementById('menu-btn').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.add('active');
+      document.getElementById('overlay').classList.add('active');
+    });
+    document.getElementById('close-btn').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.remove('active');
+      document.getElementById('overlay').classList.remove('active');
+    });
+    document.getElementById('overlay').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.remove('active');
+      document.getElementById('overlay').classList.remove('active');
+    });
+    const menuItems = document.querySelectorAll('.menu-item');
+    const tabpages = document.querySelectorAll('.tabpage');
+    menuItems.forEach(item => {
+      item.addEventListener('click', () => {
+        menuItems.forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        tabpages.forEach(page => page.classList.remove('active'));
+        document.getElementById(`tab-${item.dataset.tab}`).classList.add('active');
+        document.getElementById('sidebar').classList.remove('active');
+        document.getElementById('overlay').classList.remove('active');
+      });
+    });
+  </script>
 </body>
 </html>

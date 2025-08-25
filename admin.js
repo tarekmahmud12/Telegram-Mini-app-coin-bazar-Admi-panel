@@ -3,7 +3,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 import {
   getFirestore, collection, getDocs, getDoc, doc, query, where,
-  orderBy, limit, updateDoc, setDoc, addDoc, serverTimestamp, increment, deleteDoc
+  orderBy, limit, updateDoc, setDoc, addDoc, serverTimestamp, increment, deleteDoc, writeBatch
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 const app = window.__fbApp;
@@ -19,17 +19,7 @@ const ts = (t) => !t ? "—" : (t.toDate ? t.toDate() : new Date(t)).toLocaleStr
 // ---------- Views / Tabs ----------
 const loginView = $("#login-view");
 const adminView = $("#admin-view");
-const tabs = $$(".tab");
 const pages = $$(".tabpage");
-
-tabs.forEach(btn=>{
-  btn.addEventListener("click", ()=>{
-    tabs.forEach(b=>b.classList.remove("active"));
-    pages.forEach(p=>p.classList.remove("active"));
-    btn.classList.add("active");
-    $("#tab-"+btn.dataset.tab).classList.add("active");
-  });
-});
 
 // ---------- Auth & Auto Logout ----------
 let logoutTimer;
@@ -41,20 +31,17 @@ const resetLogoutTimer = () => {
   }, 15 * 60 * 1000); // 15 minutes
 };
 
-// Listen for auth state changes
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    // User is signed in, show admin view and load data
     $("#current-admin").textContent = user.email || user.uid;
     loginView.classList.remove("active");
     adminView.classList.add("active");
-    resetLogoutTimer(); // Start inactivity timer
+    resetLogoutTimer();
     await refreshAll();
   } else {
-    // User is signed out, show login view
     loginView.classList.add("active");
     adminView.classList.remove("active");
-    clearTimeout(logoutTimer); // Clear any existing timer
+    clearTimeout(logoutTimer);
   }
 });
 
@@ -64,7 +51,6 @@ $("#login-btn").addEventListener("click", async ()=>{
   $("#login-error").textContent = "";
   try {
     await signInWithEmailAndPassword(auth, email, pwd);
-    // onAuthStateChanged will handle the rest
   } catch (e) {
     $("#login-error").textContent = e.message || "Login failed";
   }
@@ -72,10 +58,8 @@ $("#login-btn").addEventListener("click", async ()=>{
 
 $("#logout-btn").addEventListener("click", async ()=>{
   await signOut(auth);
-  // onAuthStateChanged will handle the view change
 });
 
-// Add listeners for inactivity
 document.addEventListener("mousemove", resetLogoutTimer);
 document.addEventListener("keydown", resetLogoutTimer);
 document.addEventListener("scroll", resetLogoutTimer);
@@ -329,7 +313,7 @@ async function resetDailyAds() {
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   const usersSnap = await getDocs(collection(db, "users"));
-  const batch = db.batch();
+  const batch = writeBatch(db);
 
   usersSnap.forEach(userDoc => {
     const userData = userDoc.data();
@@ -349,8 +333,4 @@ async function resetDailyAds() {
   console.log("Daily ad reset batch committed.");
 }
 
-// This function will run the daily ad reset logic.
-// For a production environment, this task is best handled by a scheduled Firebase Cloud Function.
-// However, for a simple client-side solution, this will perform the reset when the admin panel loads.
 resetDailyAds();
-
